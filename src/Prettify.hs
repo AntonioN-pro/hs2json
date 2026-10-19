@@ -19,3 +19,11 @@ char _c = undefined
 
 hcat :: [Doc] -> Doc
 hcat _xs = undefined
+
+fsep :: [Doc] -> Doc
+fsep _xs = undefined
+
+punctuate :: Doc -> [Doc] -> [Doc]
+punctuate _ []     = []
+punctuate _ [d]    = [d]
+punctuate p (d:ds) = (d <> p) : punctuate p ds
