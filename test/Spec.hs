@@ -6,12 +6,17 @@ module Main (main) where
 import Prelude hiding ((<>))
 
 import Test.QuickCheck
-import Data.List (intersperse)
+import Data.List (intersperse, isPrefixOf, isSuffixOf)
 import Control.Monad (liftM, liftM2)
 import System.Exit (exitFailure)
 
 import SimpleJSON
 import Prettify
+import PrettyJSON (renderJValue)
+
+-- ============================================================================
+-- 1. Gerador Arbitrary para Doc (Capítulos 8 e 9)
+-- ============================================================================
 
 instance Arbitrary Doc where
     arbitrary =
@@ -22,9 +27,13 @@ instance Arbitrary Doc where
               , liftM2 Concat arbitrary arbitrary
               , liftM2 Union  arbitrary arbitrary ]
 
+-- ============================================================================
+-- 2. Gerador Arbitrary para JValue com controle de profundidade e largura (Cap. 9)
+-- ============================================================================
+
 -- | Gera um JValue recursivo limitando tanto a profundidade (via sized)
 -- quanto a largura das listas internas (via resize (n `div` 2) envolvendo listOf),
--- evitando explosao exponencial de memoria em JObject e JArray.
+-- evitando explosão exponencial de memória em JObject e JArray.
 instance Arbitrary JValue where
     arbitrary = sized genJValue
 
@@ -45,6 +54,10 @@ genJValue n
       ]
     field   = (,) <$> arbitrary <*> smaller
     smaller = genJValue (n `div` 2)
+
+-- ============================================================================
+-- 3. Propriedades da Biblioteca Prettify (Doc)
+-- ============================================================================
 
 prop_empty_id :: Doc -> Bool
 prop_empty_id x =
@@ -85,6 +98,11 @@ prop_compact_text s = compact (text s) == s
 prop_pretty_text :: Positive Int -> String -> Bool
 prop_pretty_text (Positive w) s = pretty w (text s) == s
 
+-- ============================================================================
+-- 4. Propriedades de JValue: Accessors, Escapes e Renderização (Especificação C)
+-- ============================================================================
+
+-- Propriedade 1: Corretude dos accessors para valores construídos (Roundtrip)
 prop_getString_roundtrip :: String -> Bool
 prop_getString_roundtrip s = getString (JString s) == Just s
 
@@ -103,6 +121,7 @@ prop_getObject_roundtrip o = getObject (JObject o) == Just o
 prop_getArray_roundtrip :: [JValue] -> Bool
 prop_getArray_roundtrip a = getArray (JArray a) == Just a
 
+-- Propriedade 2: Invariante de isNull e segurança de tipos nos accessors
 prop_isNull_correct :: JValue -> Bool
 prop_isNull_correct v = isNull v == (v == JNull)
 
@@ -113,6 +132,42 @@ prop_accessors_safe_on_mismatch s d b =
  && getBool   JNull       == Nothing
  && getObject (JBool b)   == Nothing
  && getArray  (JString s) == Nothing
+
+-- Propriedade 3: Corretude dos escapes em strings JSON renderizadas
+-- Toda string renderizada começa e termina com aspas duplas e não possui
+-- aspas duplas ou quebras de linha literais não escapadas em seu interior.
+prop_string_quotes_escaped :: String -> Bool
+prop_string_quotes_escaped s =
+    let rendered = compact (renderJValue (JString s))
+        inner = drop 1 (take (length rendered - 1) rendered)
+    in length rendered >= 2
+    && ['"'] `isPrefixOf` rendered
+    && ['"'] `isSuffixOf` rendered
+    && noUnescapedSpecials inner
+  where
+    noUnescapedSpecials []               = True
+    noUnescapedSpecials ('\\' : _ : rest) = noUnescapedSpecials rest
+    noUnescapedSpecials ('"'  : _)       = False
+    noUnescapedSpecials ('\n' : _)       = False
+    noUnescapedSpecials ('\r' : _)       = False
+    noUnescapedSpecials ('\t' : _)       = False
+    noUnescapedSpecials (_    : rest)    = noUnescapedSpecials rest
+
+-- Propriedade 4: Idempotência da renderização de texto de um JValue
+-- Renderizar um JValue como texto e re-empacotar em Doc produz a mesma saída
+prop_render_idempotent :: JValue -> Bool
+prop_render_idempotent v =
+    let firstPass  = compact (renderJValue v)
+        secondPass = compact (text firstPass)
+    in not (null firstPass) && firstPass == secondPass
+
+-- Propriedade 5: Delimitadores estruturais de JArray e JObject
+prop_containers_enclose :: [(String, JValue)] -> [JValue] -> Bool
+prop_containers_enclose kvs vs =
+    let objStr = compact (renderJValue (JObject kvs))
+        arrStr = compact (renderJValue (JArray vs))
+    in ("{" `isPrefixOf` objStr && "}" `isSuffixOf` objStr)
+    && ("[" `isPrefixOf` arrStr && "]" `isSuffixOf` arrStr)
 
 return []
 runTests :: IO Bool
