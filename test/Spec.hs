@@ -98,6 +98,11 @@ prop_compact_text s = compact (text s) == s
 prop_pretty_text :: Positive Int -> String -> Bool
 prop_pretty_text (Positive w) s = pretty w (text s) == s
 
+prop_fill_min_width :: Positive Int -> String -> Bool
+prop_fill_min_width (Positive w) s =
+    let w' = min w 80
+    in length (compact (fill w' (text s))) >= min w' (length s)
+
 -- ============================================================================
 -- 4. Propriedades de JValue: Accessors, Escapes e Renderização (Especificação C)
 -- ============================================================================
