@@ -18,6 +18,20 @@ sample =
       ("observacoes", JNull)
     ]
 
+nestedSample :: JValue
+nestedSample =
+  JObject
+    [ ("turma", JString "Programacao Funcional"),
+      ("grupos", JArray
+        [ JObject
+            [ ("integrantes", JArray [JString "Antonio", JString "Gabriel"]),
+              ("notas", JArray [JNumber 9.5, JNumber 10])
+            ],
+          JObject [("integrantes", JArray [JString "Equipe 2"])]
+        ]),
+      ("ativa", JBool True)
+    ]
+
 main :: IO ()
 main = do
   putStrLn "== Renderizador simples (PutJSON) =="
@@ -30,6 +44,14 @@ main = do
   putStrLn ""
   putStrLn "== Renderizacao formatada (pretty, largura 40) =="
   putStrLn (pretty 40 (PrettyJSON.renderJValue sample))
+
+  putStrLn ""
+  putStrLn "== Exemplo aninhado (pretty, largura 20) =="
+  putStrLn (pretty 20 (PrettyJSON.renderJValue nestedSample))
+
+  putStrLn ""
+  putStrLn "== Exemplo aninhado (pretty, largura 60) =="
+  putStrLn (pretty 60 (PrettyJSON.renderJValue nestedSample))
 
   putStrLn ""
   putStrLn "== Extracao segura com accessors (SimpleJSON) =="
