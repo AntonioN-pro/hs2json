@@ -158,6 +158,11 @@ prop_string_quotes_escaped s =
     noUnescapedSpecials ('\t' : _)       = False
     noUnescapedSpecials (_    : rest)    = noUnescapedSpecials rest
 
+prop_unicode_escaped :: String -> Bool
+prop_unicode_escaped s =
+    all (\c -> c >= ' ' && c <= '\xff' && c /= '\x7f')
+        (compact (renderJValue (JString s)))
+
 -- Propriedade 4: Idempotência da renderização de texto de um JValue
 -- Renderizar um JValue como texto e re-empacotar em Doc produz a mesma saída
 prop_render_idempotent :: JValue -> Bool
