@@ -15,6 +15,7 @@ module Prettify
     , softline
     , compact
     , pretty
+    , fill
     ) where
 
 import Prelude hiding ((<>))
@@ -105,6 +106,10 @@ pretty width x = best 0 [x]
           nicest col a b | (width - least) `fits` a = a
                          | otherwise                = b
                          where least = min width col
+
+fill :: Int -> Doc -> Doc
+fill width d = d <> text (replicate pad ' ')
+    where pad = max 0 (width - length (compact d))
 
 fits :: Int -> String -> Bool
 w `fits` _ | w < 0 = False
