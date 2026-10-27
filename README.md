@@ -13,9 +13,7 @@ Projeto desenvolvido para a **Avaliação da Unidade 2** da disciplina de **Prog
 ---
 
 ## 🎥 Vídeo de Apresentação
-
-> 📌 **Link para o vídeo de apresentação (10–15 min):**
-> 🔗 **[Assistir Vídeo de Apresentação (Inserir Link do YouTube / Google Drive aqui)](#)**
+> 🔗 **https://drive.google.com/file/d/1hnsVHVpHcFpMwzPi8GvoyOGjpQM70Xno/view?usp=sharing**
 
 ---
 
